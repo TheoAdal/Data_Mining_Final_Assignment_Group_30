@@ -3,3 +3,4 @@
 !.gitignore
 !load_data.py
 !signature_generation.py
+!*.py
