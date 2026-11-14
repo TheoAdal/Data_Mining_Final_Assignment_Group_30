@@ -2,7 +2,7 @@
 
 Usage:
     python verify_pairs.py 42                           # full pipeline, seed 42
-    python verify_pairs.py 42 --h 100 --b 20 --r 5      # LSH parameters
+    python verify_pairs.py 42 --h 150 --b 37 --r 4      # LSH parameters (these are the defaults)
     python verify_pairs.py 42 --prefilter 0             # exact check on every candidate
     python verify_pairs.py 42 --matrix output/user_movie_csr.npz   # skip the raw load (dev runs)
 
@@ -23,7 +23,7 @@ import time
 import numpy as np
 from scipy.sparse import load_npz
 
-from load_data import DEFAULT_DATA, load_data, jaccard, mem_gb
+from load_data import DEFAULT_DATA, load_data, jaccard, mem_gb, peak_mem_gb
 from signature_generation import compute_signatures
 from lsh_banding_candidate_pair import candidate_probability, iter_band_candidates, signature_agreement
 
@@ -48,12 +48,12 @@ def main():
 
     parser = argparse.ArgumentParser(description="Stage 4: verify candidates, write result.txt")
     parser.add_argument("seed", type=int, help="random seed")
-    parser.add_argument("--h", type=int, default=100, help="signature length")
-    parser.add_argument("--b", type=int, default=20, help="number of bands")
-    parser.add_argument("--r", type=int, default=5, help="rows per band")
+    parser.add_argument("--h", type=int, default=150, help="signature length")
+    parser.add_argument("--b", type=int, default=37, help="number of bands")
+    parser.add_argument("--r", type=int, default=4, help="rows per band")
     parser.add_argument("--max-bucket", type=int, default=1000, help="skip larger buckets")
     parser.add_argument("--threshold", type=float, default=0.5, help="keep pairs with Jaccard > this")
-    parser.add_argument("--prefilter", type=float, default=0.3,
+    parser.add_argument("--prefilter", type=float, default=0.4,
                         help="minimum signature agreement before the exact check")
     parser.add_argument("--time-limit", type=float, default=28 * 60, help="seconds from start")
     parser.add_argument("--data", default=None, help="raw .npy (default: data/ or next to script)")
@@ -138,7 +138,7 @@ def main():
     print(f"time: load {time_load:.1f} s, signatures {time_signatures:.1f} s, "
           f"banding {time_bands_total - time_verifying:.1f} s, verification {time_verifying:.1f} s, "
           f"total {total_time:.1f} s" + ("  (stopped by time limit)" if stopped_by_time else ""))
-    print(f"process memory: {mem_gb():.2f} GB")
+    print(f"process memory: {mem_gb():.2f} GB now, {peak_mem_gb():.2f} GB peak")
     print(f"result written to {args.result}")
 
     details_path = os.path.join(args.out, f"similar_pairs_seed{args.seed}_h{args.h}_b{args.b}_r{args.r}.csv")

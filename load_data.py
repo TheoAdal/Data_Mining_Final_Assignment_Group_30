@@ -52,6 +52,14 @@ def jaccard(M, u, v):
     return inter / (a.size + b.size - inter)
 
 
+def peak_mem_gb():
+    """Highest memory use of this process so far, in GB (the number that matters for the 8 GB limit)."""
+    import resource
+    import sys
+    peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    return peak / 1e9 if sys.platform == "darwin" else peak * 1024 / 1e9   # bytes on macOS, KB on Linux
+
+
 def mem_gb():
     """Current process memory in GB (NaN if psutil is not installed)."""
     try:
