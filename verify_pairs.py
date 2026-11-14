@@ -51,7 +51,7 @@ def main():
     parser.add_argument("--h", type=int, default=150, help="signature length")
     parser.add_argument("--b", type=int, default=37, help="number of bands")
     parser.add_argument("--r", type=int, default=4, help="rows per band")
-    parser.add_argument("--max-bucket", type=int, default=1000, help="skip larger buckets")
+    parser.add_argument("--max-bucket", type=int, default=5000, help="skip larger buckets")
     parser.add_argument("--threshold", type=float, default=0.5, help="keep pairs with Jaccard > this")
     parser.add_argument("--prefilter", type=float, default=0.4,
                         help="minimum signature agreement before the exact check")
