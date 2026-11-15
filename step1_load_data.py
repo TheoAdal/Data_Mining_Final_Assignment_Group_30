@@ -1,8 +1,8 @@
 """Stage 1: load the ratings AND sparse user x movie matrix.
 
 Usage:
-    python load_data.py
-    python load_data.py --data path/to/user_movie_rating.npy
+    python step1_load_data.py
+    python step1_load_data.py --data path/to/user_movie_rating.npy
 
 Reads data/user_movie_rating.npy next to this script and saves the matrix to
 output/user_movie_csr.npz. Other stages can also import load_data / jaccard.

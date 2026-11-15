@@ -1,9 +1,9 @@
 #Stage 2: Signature table.
 
-#python signature_generation.py 42                # seed 42, h = 100
-#python signature_generation.py 42 --h 150        # different signature length
-#python signature_generation.py 42 --plot         # also save agreement-vs-Jaccard plot
-#python signature_generation.py 42 --timing       # also time h = 50, 100, 150
+#python step2_minhash.py 42                # seed 42, h = 100
+#python step2_minhash.py 42 --h 150        # different signature length
+#python step2_minhash.py 42 --plot         # also save agreement-vs-Jaccard plot
+#python step2_minhash.py 42 --timing       # also time h = 50, 100, 150
 
 
 import argparse
@@ -13,7 +13,7 @@ import time
 import numpy as np
 from scipy.sparse import load_npz
 
-from load_data import DEFAULT_DATA, DEFAULT_MATRIX, load_data, jaccard, mem_gb
+from step1_load_data import DEFAULT_DATA, DEFAULT_MATRIX, load_data, jaccard, mem_gb
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -77,7 +77,7 @@ def main():
     if os.path.exists(args.matrix):
         M = load_npz(args.matrix).tocsr()
     else:
-        print("matrix not found, building it from the raw data (run load_data.py to save it)")
+        print("matrix not found, building it from the raw data (run step1_load_data.py to save it)")
         M = load_data(args.data)
 
     print("=== Stage 2: signatures ===")

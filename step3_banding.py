@@ -1,9 +1,9 @@
 """Stage 3: LSH banding -> candidate pairs.
 
 Usage:
-    python lsh_banding_candidate_pair.py 42                        # seed 42, h = 100, b = 20, r = 5
-    python lsh_banding_candidate_pair.py 42 --h 120 --b 20 --r 6   # other parameters
-    python lsh_banding_candidate_pair.py 42 --max-bucket 500       # skip buckets with more users
+    python step3_banding.py 42                        # seed 42, h = 100, b = 20, r = 5
+    python step3_banding.py 42 --h 120 --b 20 --r 6   # other parameters
+    python step3_banding.py 42 --max-bucket 500       # skip buckets with more users
 
 Reads output/signatures_h{h}_seed{seed}.npy written by stage 2 (or computes the
 signatures if that file is missing) and saves the candidates to
@@ -34,8 +34,8 @@ import time
 
 import numpy as np
 
-from load_data import DEFAULT_DATA, DEFAULT_MATRIX, load_data, mem_gb
-from signature_generation import compute_signatures
+from step1_load_data import DEFAULT_DATA, DEFAULT_MATRIX, load_data, mem_gb
+from step2_minhash import compute_signatures
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -174,7 +174,7 @@ def main():
     if os.path.exists(sig_path):
         sig = np.load(sig_path)
     else:
-        print(f"{sig_path} not found, computing signatures (run signature_generation.py to save them)")
+        print(f"{sig_path} not found, computing signatures (run step2_minhash.py to save them)")
         if os.path.exists(args.matrix):
             from scipy.sparse import load_npz
             M = load_npz(args.matrix).tocsr()
