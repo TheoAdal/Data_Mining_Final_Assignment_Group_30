@@ -23,7 +23,10 @@ How banding works here:
 - Every pair inside a bucket becomes a candidate. Buckets larger than
   max_bucket are skipped (k users give k(k-1)/2 pairs, see hint 4).
 - A pair that collides in several bands is reported only once, in the first
-  band where it appears.
+  band where it appears. This is checked directly on the signatures (does the
+  pair also collide in an earlier band, in a bucket that was not skipped?)
+  instead of keeping a growing list of all pairs seen so far, so memory stays
+  flat across bands.
 """
 import argparse
 import os
@@ -70,11 +73,34 @@ def pairs_in_buckets(order, starts, sizes, max_bucket):
         sel = starts[sizes == k]
         members = order[sel[:, None] + np.arange(k)]   # (n_buckets, k)
         i, j = np.triu_indices(k, 1)
-        u, v = members[:, i].ravel(), members[:, j].ravel()
+        u = members[:, i].ravel().astype(np.int32)
+        v = members[:, j].ravel().astype(np.int32)
         chunks.append(np.stack((np.minimum(u, v), np.maximum(u, v)), axis=1))
+        del members, u, v
     if not chunks:
         return np.empty((0, 2), dtype=np.int32), skipped
-    return np.concatenate(chunks).astype(np.int32), skipped
+    return np.concatenate(chunks), skipped
+
+
+def first_band_mask(sig, pairs, band, r, emitted, chunk=200_000):
+    """True for pairs that were not already reported in a band before `band`.
+
+    A pair was reported in band j if the two users collide there (all r rows of
+    band j equal) and their bucket was not skipped; emitted[j, u] is True when
+    user u's bucket in band j had at most max_bucket users. A pair that only
+    collided in skipped buckets so far is still new.
+    """
+    keep = np.ones(len(pairs), dtype=bool)
+    if band == 0:
+        return keep
+    earlier = sig[:band * r]
+    for s in range(0, len(pairs), chunk):
+        p = pairs[s:s + chunk]
+        equal = earlier[:, p[:, 0]] == earlier[:, p[:, 1]]          # (band * r, n)
+        collided = equal.reshape(band, r, -1).all(axis=1)            # (band, n)
+        reported = collided & emitted[:band, p[:, 0]]                # same bucket, so u's size is enough
+        keep[s:s + chunk] = ~reported.any(axis=0)
+    return keep
 
 
 def iter_band_candidates(sig, b, r, max_bucket=1000):
@@ -87,24 +113,23 @@ def iter_band_candidates(sig, b, r, max_bucket=1000):
     if b * r > h:
         raise ValueError(f"b * r = {b * r} is larger than the signature length h = {h}")
 
-    seen = np.empty(0, dtype=np.int64)             # sorted keys u * n_users + v
+    emitted = np.zeros((b, n_users), dtype=bool)    # emitted[j, u]: u's bucket in band j was not skipped
     for band in range(b):
         rows = sig[band * r:(band + 1) * r]
         order, starts, sizes = band_buckets(rows)
+        emitted[band, order] = np.repeat(sizes <= max_bucket, sizes)
+        # every user is in exactly one bucket per band, so a pair occurs at most once here
         pairs, skipped = pairs_in_buckets(order, starts, sizes, max_bucket)
-
-        keys = np.unique(pairs[:, 0].astype(np.int64) * n_users + pairs[:, 1])
-        new_keys = np.setdiff1d(keys, seen, assume_unique=True)
-        seen = np.union1d(seen, new_keys)
-        new_pairs = np.stack((new_keys // n_users, new_keys % n_users), axis=1).astype(np.int32)
+        new_pairs = pairs[first_band_mask(sig, pairs, band, r, emitted)]
 
         stats = {
             "buckets_2plus": int(np.sum(sizes >= 2)),
             "largest_bucket": int(sizes.max()),
             "skipped_buckets": skipped,
-            "pairs_in_band": int(keys.size),
-            "new_pairs": int(new_keys.size),
+            "pairs_in_band": int(len(pairs)),
+            "new_pairs": int(len(new_pairs)),
         }
+        del pairs, order, starts, sizes
         yield band, new_pairs, stats
 
 
