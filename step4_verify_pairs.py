@@ -1,10 +1,10 @@
 """Stage 4: check candidate pairs against their real Jaccard similarity, write result.txt.
 
 Usage:
-    python verify_pairs.py 42                           # full pipeline, seed 42
-    python verify_pairs.py 42 --h 150 --b 37 --r 4      # LSH parameters (these are the defaults)
-    python verify_pairs.py 42 --prefilter 0             # exact check on every candidate
-    python verify_pairs.py 42 --matrix output/user_movie_csr.npz   # skip the raw load (dev runs)
+    python step4_verify_pairs.py 42                           # full pipeline, seed 42
+    python step4_verify_pairs.py 42 --h 150 --b 37 --r 4      # LSH parameters (these are the defaults)
+    python step4_verify_pairs.py 42 --prefilter 0             # exact check on every candidate
+    python step4_verify_pairs.py 42 --matrix output/user_movie_csr.npz   # skip the raw load (dev runs)
 
 Runs the whole pipeline: stage 1 (sparse matrix), stage 2 (signatures), stage 3
 (banding, band by band) and then, for the new candidates of each band:
@@ -23,9 +23,9 @@ import time
 import numpy as np
 from scipy.sparse import load_npz
 
-from load_data import DEFAULT_DATA, load_data, jaccard, mem_gb, peak_mem_gb
-from signature_generation import compute_signatures
-from lsh_banding_candidate_pair import candidate_probability, iter_band_candidates, signature_agreement
+from step1_load_data import DEFAULT_DATA, load_data, jaccard, mem_gb, peak_mem_gb
+from step2_minhash import compute_signatures
+from step3_banding import candidate_probability, iter_band_candidates, signature_agreement
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
